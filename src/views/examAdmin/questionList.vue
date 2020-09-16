@@ -1,20 +1,39 @@
 <template>
   <div>
+
+    <el-tabs v-model="activeName">
+    <el-tab-pane label="单个新建题目" name="first">
     <div class="clearfix">
       <el-button class="fr" type="success" size="mini" @click="addQuestion">新增题目</el-button>
     </div>
 
     <el-form ref="searchForm" :inline="true" size="mini" :model="searchForm" label-width="100px" :rules="searchFormRules">
-      <el-form-item label="题目类型" prop="qType">
+      <el-form-item label="试卷类别" prop="testId">
+          <el-select
+            class="w100"
+            v-model="searchForm.testId" 
+            placeholder="请选择试卷类别"
+            filterable
+            clearable
+            @clear="clearPackSetsFn('testId')"
+          >
+            <el-option v-for="item of testType" :label="item.testTitle" :value="item.id" :key="item.id"></el-option>
+          </el-select>
+
+
+      </el-form-item>
+
+      <el-form-item label="题目类型">
         <el-select v-model="searchForm.qType" placeholder="请选择" filterable clearable class="w100">
           <el-option label="单选题" value="1"></el-option>
           <el-option label="多选题" value="2"></el-option>
+          <el-option label="判断题" value="3"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="题目内容">
         <el-input v-model.trim="searchForm.qContent"></el-input>
       </el-form-item>
-      <el-button size="small" type="primary" @click="getTableData(1)">查询</el-button>
+      <el-button size="mini" type="primary" @click="getTableData(1)">查询</el-button>
     </el-form>
 
 
@@ -24,11 +43,12 @@
         <template v-slot="scope">
           <span v-if="scope.row.questionType==1">单选题</span>
           <span v-if="scope.row.questionType==2">多选题</span>
+          <span v-if="scope.row.questionType==3">判断题</span>
         </template>
       </el-table-column>
       <el-table-column label="题目内容" prop="questionContent" width="400" align="center"></el-table-column>
-      <el-table-column label="正确答案" prop="answerTrue" width="100" align="center"></el-table-column>
-      <el-table-column label="问题分值" prop="questionBonus" width="100" align="center"></el-table-column>
+      <el-table-column label="正确答案" prop="answerTrue"  align="center"></el-table-column>
+      <el-table-column label="问题分值" prop="questionBonus"  align="center"></el-table-column>
 
       <el-table-column align="right" width="200" fixed="right">
         <template slot="header" slot-scope="scope">
@@ -69,10 +89,11 @@
       @resultDataEmitFn="resultDataFn"
     >
       <div slot="formContent">
-        <el-form-item label="题型" prop="qType">
+        <el-form-item label="题目类型" prop="qType">
           <el-select
             class="w100"
             v-model="typeForm.qType"
+            @change="isShowOtherChooseFn"
             placeholder="请选择题型"
             filterable
             clearable
@@ -80,8 +101,26 @@
           >
             <el-option label="单选题" :value=1></el-option>
             <el-option label="多选题" :value=2></el-option>
+            <el-option label="判断题" :value=3></el-option>
           </el-select>
         </el-form-item>
+
+
+        <el-form-item label="试卷类别" prop="testId">
+          <el-select
+            class="w100"
+            v-model="typeForm.testId"
+            placeholder="请选择试卷类别"
+            filterable
+            clearable
+            @clear="clearPackSetsFn('testId')"
+          >
+            <el-option v-for="item of testType" :label="item.testTitle" :value="item.id" :key="item.id"></el-option>
+          </el-select>
+        </el-form-item>
+
+
+
         <el-form-item label="分值" prop="qBonus">
           <el-input :disabled="otherInfo=='1'" v-model.trim.number="typeForm.qBonus" placeholder="题目的分值"></el-input>
         </el-form-item>
@@ -150,6 +189,7 @@
         </el-form-item>
 
 
+<div v-if="isShowOtherChoose">
         <el-form-item label="选项C">
           <el-row :gutter="20">
             <el-col :span="16">
@@ -302,7 +342,7 @@
           
           <el-avatar class="mt-15 ml-15" v-show="fFileName" shape="square" :size="50" :src="fFileName"></el-avatar>
         </el-form-item>
-
+</div>
         <el-form-item label="正确答案" prop="answerTrue">
           <el-input v-model.trim="typeForm.answerTrue"></el-input>
         </el-form-item>
@@ -317,6 +357,52 @@
       :pageSize="pageSize"
       :pageSizes="pageSizes"
     />
+</el-tab-pane>
+<el-tab-pane label="批量导入题目" name="second">
+  <div class="clearfix">
+    <el-form :inline="true" size="mini" label-width="100px">
+      <el-form-item label="试卷类别">
+        <el-select
+            prop="testId"
+            class="w100"
+            v-model="importForm.testId" 
+            placeholder="请选择试卷类别"
+            filterable
+            clearable
+            @clear="clearPackSetsFn('testId')"
+          >
+            <el-option v-for="item of testType" :label="item.testTitle" :value="item.id" :key="item.id"></el-option>
+          </el-select>
+
+
+      </el-form-item>
+
+      <el-form-item label="题目类别">
+        <el-select v-model="importForm.qTypeId" placeholder="请选择" filterable clearable class="w100">
+          <el-option label="单选题" value="1"></el-option>
+          <el-option label="多选题" value="2"></el-option>
+          <el-option label="判断题" value="3"></el-option>
+        </el-select>
+      </el-form-item>
+
+      <el-form-item>
+        <el-upload
+          ref="upload"
+          action="#"
+          accept=".xls, .xlsx"
+          :file-list="fileList"
+          :show-file-list="false"
+          :beforeUpload="beforeAvatarUpload"
+          :http-request="httpRequestImportQ"
+        >
+          <el-button type="success" size="mini">导入题目</el-button>
+        </el-upload>
+      </el-form-item>
+    </el-form>
+  </div>
+
+</el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -328,15 +414,21 @@ import {
   addQPack,
   delQPack,
   updQPack,
+  findTest,
+  importQPack,
 } from "../../api/api.js";
 import { baseURL } from "../../common/js/ipConfig";
 export default {
   name: "questionList",
   data() {
     return {
+      activeName: 'first',
+      importForm:{},
       searchForm: {},
       searchFormRules: {
+        testId: [{ required: true, message: "必选项", trigger: "blur" }],
         qType: [{ required: true, message: "必选项", trigger: "blur" }],
+        qTypeId:[{ required: true, message: "必选项", trigger: "blur" }],
       },
       otherInfo: -1,
       formTitle: "新增题目",
@@ -352,6 +444,7 @@ export default {
       typeForm: {
       },
       typeFormRules: {
+        testId: [{ required: true, message: "此项必填", trigger: "blur" }],
         qType: [{ required: true, message: "此项必填", trigger: "blur" }],
         qBonus: [{ required: true, message: "此项必填", trigger: "blur" }],
         qContent: [{ required: true, message: "此项必填", trigger: "blur" }],
@@ -372,6 +465,8 @@ export default {
       dFileName:'',
       eFileName:'',
       fFileName:'',
+      isShowOtherChoose:true,
+      testType:[]
     };
   },
   components: { pagination, publicForm },
@@ -386,8 +481,39 @@ export default {
     },
   },
   mounted() {
+    this.getTestType();
   },
   methods: {
+    async getTestType(pageNum, cb) {
+          var paramsObj = {
+            pageNo: 1,
+            pageSize:1000,
+          };
+          try {
+            let data = await this.$axios.post(
+              findTest,
+              this._qs.stringify(paramsObj)
+            );
+            if (data.status == 0) {
+              this.testType = data.data.content;
+              if (cb) {
+                cb();
+              }
+            } else {
+              this.$message.error(data.msg);
+            }
+          } catch (err) {
+            this.$message.error("网络异常，请稍后再试");
+          }
+       
+    },
+    isShowOtherChooseFn(){
+      if( this.typeForm.qType==3 ){
+        this.isShowOtherChoose=false;
+      }else{
+        this.isShowOtherChoose=true;
+      }
+    },
     httpRequest1(param) {
       let fileObj = param.file; // 相当于input里取得的files
       let fd = new window.FormData(); // FormData 对象
@@ -588,7 +714,7 @@ export default {
       this.$store.commit("dialogVisiblePublic/dialogVisibleMutations", true);
     },
     updQuestion(data, index) {
- 
+
       if(data.aFileName){
         this.aFileName=baseURL.ip1+'/upload/'+data.aFileName;
       }
@@ -631,7 +757,9 @@ export default {
           dFile:data.dFileName,
           eFile:data.eFileName,
           fFile:data.fFileName,
+          testId:data.testId
       };
+      this.isShowOtherChooseFn();
     },
     delQuestion(data, index) {
       this.tableIndex = index;
@@ -663,6 +791,49 @@ export default {
           });
         });
     },
+
+
+    beforeAvatarUpload(file) {
+      var testmsg = file.name.substring(file.name.lastIndexOf(".") + 1);
+      const extension = testmsg === "xls";
+      const extension2 = testmsg === "xlsx";
+      if (!extension && !extension2) {
+        this.$message({
+          message: "上传文件只能是 xls、xlsx格式!",
+          type: "warning",
+        });
+      }
+      return extension || extension2;
+    },
+    httpRequestImportQ(param) {
+ 
+        let fileObj = param.file; // 相当于input里取得的files
+        let fd = new window.FormData(); // FormData 对象
+        fd.append("files", fileObj); // 文件对象
+        fd.append("qTypeId", this.importForm.qTypeId); // 文件对象
+        fd.append("testId", this.importForm.testId); // 文件对象
+        var options = {
+          url: importQPack,
+          data: fd,
+          method: "post",
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        };
+        this.$axios(options)
+          .then((res) => {
+            this.$message.success(res.msg);
+          })
+          .catch((err) => {
+            this.$message.error("上传失败！");
+          });
+      
+      
+    },
+
+
+
+
   },
 };
 </script>

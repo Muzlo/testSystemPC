@@ -28,7 +28,7 @@ router.beforeEach( async(to, from, next) => {
                     if(data.status==0){
                         const menuArr= [
                             {
-                                text: '题库',
+                                text: '题库设置',
                                 children: [
                                     {
                                         name: 'questionList',
@@ -37,16 +37,20 @@ router.beforeEach( async(to, from, next) => {
                                 ],
                             },
                             {
-                                text: '试卷',
+                                text: '试卷设置',
                                 children: [
+                                    // {
+                                    //     name: 'testPaperList',
+                                    //     text: '试卷列表',
+                                    // },
                                     {
-                                        name: 'testPaperList',
-                                        text: '试卷列表',
-                                    }
+                                        name: 'testType',
+                                        text: '试卷分类',
+                                    },
                                 ],
                             },
                             {
-                                text: '用户',
+                                text: '用户设置',
                                 children: [
                                     {
                                         name: 'userList',

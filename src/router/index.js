@@ -50,6 +50,12 @@ export const asyncRoutes = {
         meta: { title:'测试'},
         component: () => import('../views/examAdmin/msg.vue'),
     },
+    testType: {
+        path: 'testType',
+        name: 'testType',
+        meta: { title:'题目分类'},
+        component: () => import('../views/examAdmin/testType.vue'),
+    },
 }
 
 const createRouter = () => new Router({

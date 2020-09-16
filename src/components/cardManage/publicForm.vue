@@ -77,7 +77,6 @@ export default {
       },
       //新增 更新 公共函数
       async publicHandle(url,method){
-        console.log(this.form)
         try {
               const data = await this.$axios[method](url,
               this._qs.stringify(this.form)

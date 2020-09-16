@@ -4,8 +4,8 @@
       <el-tab-pane label="用户导入" name="first">
         <div class="clearfix">
           <el-form :inline="true" size="mini" label-width="100px">
-            <el-form-item label="试卷类别">
-              <el-select filterable v-model="testId" placeholder="请选择试卷类别">
+            <el-form-item label="试卷">
+              <el-select filterable v-model="testId" placeholder="请选择试卷">
                 <el-option
                   v-for="item in getTestArr"
                   :key="item.id"
@@ -37,7 +37,7 @@
           <!-- <el-form-item label="登陆ID">
             <el-input v-model.trim="searchForm.loginId"></el-input>
           </el-form-item> -->
-          <el-form-item label="试卷类别">
+          <el-form-item label="试卷">
 
             <el-select filterable clearable v-model="searchForm.testId" placeholder="请选择试卷">
               <el-option
@@ -64,10 +64,10 @@
           </el-form-item>
 
           <el-button size="mini" type="primary" @click="getTableData(1)">查询</el-button>
-          <el-button size="mini" type="primary" @click="importUserFn">导出用户</el-button>
         </el-form>
-        <el-divider content-position="center"><h2 class="mb-15">查询结果</h2></el-divider>
-    <el-table border :data="tableData" style="width: 100%">
+<el-divider content-position="center"><h2 class="mb-15">查询结果</h2></el-divider>
+            <el-table border :data="tableData" style="width: 100%">
+
       <el-table-column label="ID" width="50" prop="id" align="center"></el-table-column>
       <!-- <el-table-column label="登录ID" width="50" prop="loginId" align="center"></el-table-column> -->
       <el-table-column label="用户类型" align="center">
@@ -79,11 +79,7 @@
       <el-table-column label="用户姓名" prop="userName" align="center"></el-table-column>
       <el-table-column label="试卷" prop="tTest.testTitle" align="center"></el-table-column>
       <el-table-column label="用户分数" prop="userBonus" align="center"></el-table-column>
-      <el-table-column label="更新时间" align="center">
-        <template slot-scope="scope">
-          <span>{{scope.row.updDate | formatTime}}</span>
-        </template>
-      </el-table-column>
+      <el-table-column label="更新时间" prop="updDate" align="center"></el-table-column>
 
       <el-table-column align="right" width="200" fixed="right">
         <template slot-scope="scope">
@@ -132,19 +128,10 @@
       :title="testTitle"
       :visible.sync="dialogVisible"
       :fullscreen="true">
-
+      
       <ul v-if="testContent.length" class="testContent">
-        <div class="subTitle">{{subTitle}}</div>
         <li class="mb-15" v-for="(item,index) of testContent" :key="index">
-          <p class="mb-15 p p1">{{item.qPack.tQuestionType.questionTypeName}}：{{item.qPack.questionContent}} <span class="ml-15">此题{{item.questionBonus}}分</span> </p>
-          <p class="mb-15 p p5"> 
-            <span class="mr-15" v-if="!item.qPack.answerA==''"><b>A：{{item.qPack.answerA}}</b> <img v-if="item.qPack.aFileName" :src=baseURL+item.qPack.aFileName /> </span>
-            <span class="mr-15" v-if="!item.qPack.answerB==''"><b>B：{{item.qPack.answerB}}</b> <img v-if="item.qPack.bFileName" :src=baseURL+item.qPack.bFileName /> </span>
-            <span class="mr-15" v-if="!item.qPack.answerC==''"><b>C：{{item.qPack.answerC}}</b> <img v-if="item.qPack.cFileName" :src=baseURL+item.qPack.cFileName /></span>
-            <span class="mr-15" v-if="!item.qPack.answerD==''"><b>D：{{item.qPack.answerD}}</b> <img v-if="item.qPack.dFileName" :src=baseURL+item.qPack.dFileName /></span>
-            <span class="mr-15" v-if="!item.qPack.answerE==''"><b>E：{{item.qPack.answerE}}</b> <img v-if="item.qPack.eFileName" :src=baseURL+item.qPack.eFileName /></span>
-            <span class="mr-15" v-if="!item.qPack.answerF==''"><b>F：{{item.qPack.answerF}}</b> <img v-if="item.qPack.fFileName" :src=baseURL+item.qPack.fFileName /></span>
-          </p>
+          <p class="mb-15 p p1">题目：{{item.questionId}} <span class="ml-15">此题{{item.questionBonus}}分</span> </p>
           <p class="mb-15 p p2">正确答案：{{item.answerTrue}}</p>
           <p class="mb-15 p p3">你的答案：{{item.userAnswer}}</p>
           <p class="mb-15 p p4">此题得分：{{item.userBonus}}</p>
@@ -163,13 +150,12 @@
 <script>
 import pagination from "../../components/cardManage/pagination.vue";
 import publicForm from "../../components/cardManage/publicForm.vue";
-import { delUser,findQUser, importUser, findTest ,findtestResult,exportUser} from "../../api/api.js";
+import { delUser,findQUser, importUser, findTest ,findtestResult} from "../../api/api.js";
 import { baseURL } from "../../common/js/ipConfig";
 export default {
   name: "userList",
   data() {
     return {
-      baseURL:baseURL.ip1+"/upload/",
       activeName: "second",
       searchForm: {},
       tableData: [],
@@ -184,9 +170,7 @@ export default {
       testId: null,
       testContent:[],
       dialogVisible:false,
-      testTitle:"",
-      testTitleSup:'',
-      subTitle:''
+      testTitle:""
     };
   },
   components: { pagination, publicForm },
@@ -194,48 +178,10 @@ export default {
   mounted() {
     this.getAllTest2();
   },
-  filters:{
-    formatTime(value) {
-      if (!value) return ''
-      return value.substring(0,10)
-    }
-  },
   methods: {
-    async importUserFn(){
-      var paramsObj = {
-        ...this.searchForm,
-        loginId:JSON.parse(localStorage.getItem('userLoginInfo')).loginId
-      };
-
-      try {
-        let data = await this.$axios.post(
-          exportUser,
-          this._qs.stringify(paramsObj)
-        );
-        if (data.status == 0) {
-          window.location.href=baseURL.ip1+'/download/'+data.data;
-    
-        } else {
-          this.$message.error(data.msg);
-        }
-      } catch (err) {
-        this.$message.error("网络异常，请稍后再试");
-      }
-
-
-
-
-    },
     async testDetailFn(res){
-      if(res.userBonus>=res.tTest.testPassBonus){
-        this.testTitleSup='  试卷总分'+res.tTest.testCountBonus+'  及格得分'+res.tTest.testPassBonus+'  用户得分'+res.userBonus+' 成绩合格';
-      }else{
-        this.testTitleSup='  试卷总分'+res.tTest.testCountBonus+'  及格得分'+res.tTest.testPassBonus+'  用户得分'+res.userBonus+' 成绩不合格';
-      }
-      
-
       this.dialogVisible = true;
-      this.testTitle='这是'+res.userName+'的考卷'+this.testTitleSup;
+      this.testTitle='这是'+res.userName+'的考卷';
       let paramsObj={
         testId:res.testId,
         userId:res.id
@@ -245,8 +191,7 @@ export default {
         this._qs.stringify(paramsObj)
       ); 
       if (data.status == 0) {
-        this.testContent=data.data;
-        this.subTitle=`此答卷共${data.data.length}题`
+        this.testContent=data.data
       }else{
         this.$message.error(data.msg);
       }
@@ -442,11 +387,4 @@ export default {
 .testContent li .p3,.testContent li .p4{
   color:red;
 }
-.testContent li .p img{
-  margin-left: 15px;
-  max-width:200px;
-  max-height:200px;
-  border-radius: 4px;
-}
-.subTitle{font-size: 18px;margin-bottom:15px;color: #333;margin-top: -20px;}
 </style>
